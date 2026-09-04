@@ -1,0 +1,4 @@
+﻿data/*.csv
+data/processed/*.npy
+data/processed/*.joblib
+data/processed/*.json
