@@ -57,13 +57,14 @@ def load_split():
     return X_train, X_val, y_train, y_val, meta
 
 
-def class_weights_from_labels(y):
-    """Inverse-frequency class weights -- rare attack classes matter
-    more than raw accuracy would suggest, since they're the ones you
-    actually care about catching."""
+def class_weights_from_labels(y, max_weight=15.0):
+    """Inverse-frequency class weights, capped to prevent extreme
+    multipliers on very rare classes from causing over-prediction
+    (high recall but collapsed precision)."""
     classes, counts = np.unique(y, return_counts=True)
     total = len(y)
-    return {int(c): float(total / (len(classes) * cnt)) for c, cnt in zip(classes, counts)}
+    weights = {int(c): float(total / (len(classes) * cnt)) for c, cnt in zip(classes, counts)}
+    return {k: min(v, max_weight) for k, v in weights.items()}
 
 
 def plot_history(history, out_path, title):

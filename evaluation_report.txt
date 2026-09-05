@@ -2,27 +2,27 @@ Deep-NIDS-TF Evaluation Report
 ========================================
 Test set size: 50416
 
-Overall accuracy : 0.9191
-Macro precision  : 0.5555
-Macro recall     : 0.9719
-Macro F1         : 0.6291
+Overall accuracy : 0.9480
+Macro precision  : 0.6446
+Macro recall     : 0.9674
+Macro F1         : 0.7042
 
 Per-class report:
                 precision    recall  f1-score   support
 
-          Bots       0.04      0.95      0.07        39
-   Brute Force       0.44      0.99      0.61       183
-          DDoS       0.84      1.00      0.91      2560
-           DoS       0.76      0.99      0.86      3875
-Normal Traffic       1.00      0.90      0.95     41902
- Port Scanning       0.72      1.00      0.83      1814
-   Web Attacks       0.09      0.98      0.17        43
+          Bots       0.04      0.90      0.08        39
+   Brute Force       0.76      0.99      0.86       183
+          DDoS       0.99      1.00      1.00      2560
+           DoS       0.82      0.99      0.90      3875
+Normal Traffic       1.00      0.94      0.97     41902
+ Port Scanning       0.73      1.00      0.84      1814
+   Web Attacks       0.16      0.95      0.28        43
 
-      accuracy                           0.92     50416
-     macro avg       0.56      0.97      0.63     50416
-  weighted avg       0.96      0.92      0.93     50416
+      accuracy                           0.95     50416
+     macro avg       0.64      0.97      0.70     50416
+  weighted avg       0.97      0.95      0.96     50416
 
 
-Autoencoder anomaly detector (threshold=0.353168, benign class='Normal Traffic'):
-  Detection rate on true attack flows : 0.4675
-  False alarm rate on benign flows      : 0.0063
+Autoencoder anomaly detector (threshold=0.202219, benign class='Normal Traffic'):
+  Detection rate on true attack flows : 0.4928
+  False alarm rate on benign flows      : 0.0121

@@ -1,70 +1,143 @@
-# Deep-NIDS-TF: TensorFlow Network Intrusion Detection System
+# Deep-NIDS-TF 🛰️
 
-A hybrid deep-learning NIDS: a **supervised classifier** labels traffic by known
-attack type, and a **benign-only autoencoder** flags statistically unusual
-traffic the classifier was never trained on (novel/unknown attacks). A
-Streamlit dashboard visualizes evaluation metrics and the live detection feed.
+A hybrid deep-learning Network Intrusion Detection System built with TensorFlow —
+combining a **supervised classifier** (labels known attack types) with a
+**benign-only autoencoder** (flags novel/unknown attacks via anomaly detection),
+visualized through a live Streamlit dashboard.
+
+🔗 **[Live demo](REPLACE_WITH_YOUR_STREAMLIT_URL)**
+
+## Why this approach
+
+Signature-based IDS tools (Snort, Suricata) only catch attacks with known
+patterns already written into rules. This project adds a second detection
+layer: an autoencoder trained only on normal traffic flags anything that
+*reconstructs poorly* — i.e. statistically unusual — as a potential unknown
+threat, even without a matching label in training data. In production, an
+ML-based NIDS like this is typically deployed as a complement to signature
+based tools, not a replacement — one more signal for catching what static
+rules miss.
 
 ## Architecture
 
-- `scripts/preprocess_traffic.py` — cleans, encodes, and scales raw flow data;
-  can generate synthetic demo data if you don't have a real dataset yet.
-- `src/model.py` — Keras model definitions (classifier + autoencoder).
-- `src/train.py` — trains both models, saves checkpoints + training curves.
-- `src/evaluate.py` — computes accuracy/precision/recall/F1, confusion matrix,
-  and autoencoder detection/false-alarm rates; writes `evaluation_report.txt`.
-- `src/detect.py` — simulated real-time inference: scores batches of flows,
-  logs alerts to `logs/detections.jsonl`.
-- `dashboard.py` — Streamlit dashboard over the report + live log.
+```mermaid
+flowchart LR
+    A[Raw flow CSV<br/>CICIDS2017] --> B[Preprocessing<br/>clean/encode/scale]
+    B --> C[Classifier<br/>MLP, attack-type labels]
+    B --> D[Autoencoder<br/>trained on benign only]
+    C --> E[Verdict engine]
+    D --> E
+    E --> F[Streamlit Dashboard]
+```
+
+## Results (CICIDS2017 stratified sample, 252k rows)
+
+| Metric | Value |
+|---|---|
+| Overall accuracy | 94.80% |
+| Macro precision | 0.6446 |
+| Macro recall | 0.9674 |
+| Macro F1 | 0.7042 |
+
+| Autoencoder (anomaly detector) | Rate |
+|---|---|
+| Detection rate on true attack flows | 49.28% |
+| False alarm rate on benign flows | 1.21% |
+
+### Per-class performance
+
+| Class | Precision | Recall | F1 | Support |
+|---|---|---|---|---|
+| Normal Traffic | 1.00 | 0.94 | 0.97 | 41,902 |
+| DDoS | 0.99 | 1.00 | 1.00 | 2,560 |
+| DoS | 0.82 | 0.99 | 0.90 | 3,875 |
+| Port Scanning | 0.73 | 1.00 | 0.84 | 1,814 |
+| Brute Force | 0.76 | 0.99 | 0.86 | 183 |
+| Web Attacks | 0.16 | 0.95 | 0.28 | 43 |
+| Bots | 0.04 | 0.90 | 0.08 | 39 |
+
+![Confusion Matrix](models/confusion_matrix.png)
+
+### A known limitation, not an oversight
+
+`Bots` and `Web Attacks` show high recall (the model catches most real
+instances) but very low precision (it also flags a lot of unrelated traffic
+as these classes). This isn't a tuning failure — it's a direct consequence
+of data volume. These two classes make up **under 0.2% combined** of the
+training set (~150 and ~136 samples respectively, out of 176k rows). At
+that sample size, a 52-feature classifier doesn't have enough signal to
+learn a reliable decision boundary, regardless of loss weighting.
+
+I addressed the resulting class imbalance with capped inverse-frequency
+class weighting (see `class_weights_from_labels` in `src/train.py`), which
+meaningfully improved the moderately-rare classes — `Brute Force` precision
+went from 0.32 → 0.76, `DoS` from 0.77 → 0.82 — but weighting alone can't
+manufacture signal that isn't in the data for the two rarest classes.
+
+**Given more data or time, next steps would be:**
+- Collect or synthesize more `Bots`/`Web Attacks` examples (e.g. SMOTE),
+  though synthetic oversampling on flow-level features risks generating
+  unrealistic traffic patterns rather than adding real signal.
+- Route ultra-rare classes through the autoencoder instead of the
+  classifier — since the autoencoder is trained to flag any traffic that
+  doesn't reconstruct like normal traffic, it's arguably better suited to
+  "too little data to classify confidently" cases than forcing a supervised
+  label on them.
+
+## Dashboard
+
+![Model Evaluation Tab](docs/dashboard_eval.png)
+![Live Detection Log Tab](docs/dashboard_alerts.png)
+
+## Tech stack
+
+TensorFlow/Keras · scikit-learn · Pandas · Streamlit
+
+## Project structure
+
+```
+nids-project/
+├── data/                    # raw + processed data (gitignored, see data/README.md)
+├── models/                  # trained model checkpoints + plots (gitignored)
+├── logs/                    # detection logs (gitignored)
+├── scripts/
+│   ├── preprocess_traffic.py
+│   └── subsample_dataset.py
+├── src/
+│   ├── model.py             # classifier + autoencoder architectures
+│   ├── train.py
+│   ├── evaluate.py
+│   └── detect.py            # simulated real-time inference
+├── dashboard.py             # Streamlit app
+└── requirements.txt
+```
 
 ## Quickstart
 
 ```bash
 pip install -r requirements.txt
 
-# 1. Preprocess (use --synthetic for a demo, or --csv path/to/data.csv --label-col Label for real data)
+# Option A: real dataset (see data/README.md for download instructions)
+python scripts/subsample_dataset.py
+python scripts/preprocess_traffic.py --csv data/cicids_sample.csv --label-col "Attack Type"
+
+# Option B: synthetic demo data, no download needed
 python scripts/preprocess_traffic.py --synthetic
 
-# 2. Train
+# Then, either way:
 python src/train.py --epochs 30 --batch-size 256
-
-# 3. Evaluate
 python src/evaluate.py
-
-# 4. Run (simulated) real-time detection
-python src/detect.py --batch-size 32 --interval 0.5
-
-# 5. View the dashboard
+python src/detect.py
 streamlit run dashboard.py
 ```
 
-## Using a real dataset
+## What I'd improve with more time
 
-Download a cleaned CICIDS2017 / NSL-KDD / UNSW-NB15 CSV into `data/`, then:
-
-```bash
-python scripts/preprocess_traffic.py --csv data/your_dataset.csv --label-col Label
-```
-
-The rest of the pipeline (train/evaluate/detect/dashboard) is unchanged —
-everything downstream just reads from `data/processed/`.
-
-## Plugging in real live traffic
-
-`src/detect.py` currently replays test-set rows to simulate a live stream.
-To go fully real-time, replace the row-replay loop with a queue fed by a
-packet-capture + flow-aggregation process (e.g. `scapy` + a CICFlowMeter-style
-flow exporter), pushing feature rows through the same `scaler.transform()` →
-`clf.predict()` / `ae.predict()` path.
-
-## Optimization ideas to try next
-
-- Export the classifier to TensorFlow Lite (`tf.lite.TFLiteConverter`) or
-  ONNX for lower-latency inference, especially on CPU-only deployment targets.
-- Try XGBoost/LightGBM as a baseline against the classifier — tree ensembles
-  are often competitive on tabular flow features and train much faster.
-- Add concept-drift monitoring: periodically compare live feature
-  distributions against the training distribution and alert when the
-  autoencoder's false-alarm rate drifts upward.
-- Swap `StandardScaler` for feature selection/PCA if you add many more raw
-  columns from a larger dataset, to keep inference latency low.
+- Real-time flow aggregation from live packet capture (currently simulated
+  by replaying test-set rows — see the docstring in `src/detect.py` for
+  exactly where a live packet-capture feed would plug in)
+- ONNX export for lower-latency inference on CPU-only deployment targets
+- Concept drift monitoring: alert when live traffic's feature distribution
+  or the autoencoder's false-alarm rate drifts from training-time baselines
+- Address the `Bots`/`Web Attacks` data scarcity via the autoencoder-routing
+  approach described above
