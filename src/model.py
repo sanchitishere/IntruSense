@@ -1,5 +1,5 @@
 """
-Model architectures for Deep-NIDS-TF.
+Model architectures for IntruSense.
 
 - build_classifier: supervised MLP that labels traffic by attack type.
 - build_autoencoder: trained only on benign traffic; flags high

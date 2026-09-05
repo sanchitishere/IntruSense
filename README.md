@@ -1,4 +1,4 @@
-# Deep-NIDS-TF 🛰️
+# IntruSense 🛰️
 
 A hybrid deep-learning Network Intrusion Detection System built with TensorFlow —
 combining a **supervised classifier** (labels known attack types) with a
@@ -10,7 +10,7 @@ visualized through a live Streamlit dashboard.
 ## Why this approach
 
 Signature-based IDS tools (Snort, Suricata) only catch attacks with known
-patterns already written into rules. This project adds a second detection
+patterns already written into rules. IntruSense adds a second detection
 layer: an autoencoder trained only on normal traffic flags anything that
 *reconstructs poorly* — i.e. statistically unusual — as a potential unknown
 threat, even without a matching label in training data. In production, an
@@ -56,7 +56,7 @@ flowchart LR
 | Web Attacks | 0.16 | 0.95 | 0.28 | 43 |
 | Bots | 0.04 | 0.90 | 0.08 | 39 |
 
-![Confusion Matrix](models/confusion_matrix.png)
+![Confusion Matrix](docs/confusion_matrix.png)
 
 ### A known limitation, not an oversight
 
@@ -89,6 +89,12 @@ manufacture signal that isn't in the data for the two rarest classes.
 ![Model Evaluation Tab](docs/dashboard_eval.png)
 ![Live Detection Log Tab](docs/dashboard_alerts.png)
 
+**Note:** the "Live Detection Log" is a simulated real-time feed — it
+replays rows from the held-out test set through the trained models in
+batches, rather than reading from an actual network tap. See the
+docstring in `src/detect.py` for exactly where a real packet-capture /
+flow-aggregation pipeline (e.g. scapy + CICFlowMeter) would plug in.
+
 ## Tech stack
 
 TensorFlow/Keras · scikit-learn · Pandas · Streamlit
@@ -96,10 +102,11 @@ TensorFlow/Keras · scikit-learn · Pandas · Streamlit
 ## Project structure
 
 ```
-nids-project/
+IntruSense/
 ├── data/                    # raw + processed data (gitignored, see data/README.md)
 ├── models/                  # trained model checkpoints + plots (gitignored)
 ├── logs/                    # detection logs (gitignored)
+├── docs/                    # README screenshots
 ├── scripts/
 │   ├── preprocess_traffic.py
 │   └── subsample_dataset.py
@@ -134,8 +141,7 @@ streamlit run dashboard.py
 ## What I'd improve with more time
 
 - Real-time flow aggregation from live packet capture (currently simulated
-  by replaying test-set rows — see the docstring in `src/detect.py` for
-  exactly where a live packet-capture feed would plug in)
+  by replaying test data — see "Dashboard" note above)
 - ONNX export for lower-latency inference on CPU-only deployment targets
 - Concept drift monitoring: alert when live traffic's feature distribution
   or the autoencoder's false-alarm rate drifts from training-time baselines

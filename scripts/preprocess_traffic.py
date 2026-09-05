@@ -1,5 +1,5 @@
 """
-Preprocessing pipeline for Deep-NIDS-TF.
+Preprocessing pipeline for IntruSense.
 
 Usage:
     # Use your own CICIDS2017 / NSL-KDD / UNSW-NB15 style CSV

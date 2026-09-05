@@ -98,7 +98,7 @@ def main():
         )
 
     with open(REPORT_PATH, "w") as f:
-        f.write("Deep-NIDS-TF Evaluation Report\n")
+        f.write("IntruSense Evaluation Report\n")
         f.write("=" * 40 + "\n")
         f.write(f"Test set size: {len(y_test)}\n\n")
         f.write(f"Overall accuracy : {acc:.4f}\n")

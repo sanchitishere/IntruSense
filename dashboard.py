@@ -1,5 +1,5 @@
 """
-Streamlit dashboard for Deep-NIDS-TF.
+Streamlit dashboard for IntruSense.
 
 Usage:
     streamlit run dashboard.py
@@ -18,8 +18,8 @@ CM_IMAGE = os.path.join(BASE_DIR, "models", "confusion_matrix.png")
 CLF_CURVE = os.path.join(BASE_DIR, "models", "classifier_training_curve.png")
 AE_CURVE = os.path.join(BASE_DIR, "models", "autoencoder_training_curve.png")
 
-st.set_page_config(page_title="Deep-NIDS-TF Dashboard", layout="wide")
-st.title("🛰️ Deep-NIDS-TF — Network Intrusion Detection Dashboard")
+st.set_page_config(page_title="IntruSense Dashboard", layout="wide")
+st.title("🛰️ IntruSense — Network Intrusion Detection Dashboard")
 
 tab1, tab2, tab3 = st.tabs(["📊 Model Evaluation", "🚨 Live Detection Log", "📈 Training Curves"])
 
