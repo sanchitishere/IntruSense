@@ -5,7 +5,7 @@ combining a **supervised classifier** (labels known attack types) with a
 **benign-only autoencoder** (flags novel/unknown attacks via anomaly detection),
 visualized through a live Streamlit dashboard.
 
-🔗 **[Live demo](REPLACE_WITH_YOUR_STREAMLIT_URL)**
+🔗 **[Live demo](https://intrusense-nids.streamlit.app/)**
 
 ## Why this approach
 
